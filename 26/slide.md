@@ -11,7 +11,7 @@ paginate: true
 
 # Flutter 小聚 #26
 
-![bg](./image/base/cover.png)
+![bg](../images/cover.png)
 
 ---
 
@@ -30,39 +30,39 @@ paginate: true
 
 ---
 
-![bg width:75%](./image/base/gdg-taipei.jpeg)
+![bg width:75%](../images/gdg-taipei.jpeg)
 
-![bg width:80%](./image/base/gdg-taipei-qr.png)
+![bg width:80%](../images/gdg-taipei-qr.png)
 
 ---
 
-![bg width:90%](./image/base/flutter-taipei.avif)
+![bg width:90%](../images/flutter-taipei.avif)
 
-![bg width:80%](./image/base/flutter-taipei-qr.png)
+![bg width:80%](../images/flutter-taipei-qr.png)
 
 ---
 
 # GDG TW @ COSCUP 2025
 
-![width:80%](./image/coscup-2025.png)
+![width:80%](./images/coscup-2025.png)
 
 ---
 
 # Flutter Taipei 每月月報
 
-![width:80%](./image/base/medium-post.jpeg)
+![width:80%](../images/medium-post.jpeg)
 
 ---
 
 # 上台分享可獲得一個 Pin 針 及 帽子
 
-![bg width:75% right ](./image/base/sharing-swag.jpeg)
+![bg width:75% right ](../images/sharing-swag.jpeg)
 
 ---
 
 # [Slido](https://app.sli.do/event/foSqFPgdLXht2jtwsS2RQz)
 
-![bg width:75% right](./image/slido.png)
+![bg width:75% right](./images/slido.png)
 
 ---
 
@@ -78,7 +78,7 @@ paginate: true
 - Flutter Taipei Organizer
 - 專注於 Flutter 的行動應用開發者
 
-![bg height:60% right](./image/base/rainer.jpg)
+![bg height:60% right](./images/base/rainer.jpg)
 
 ---
 
