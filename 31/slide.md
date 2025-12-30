@@ -66,15 +66,6 @@ paginate: true
 
 ---
 
-
-# 為什麼我的公司在一年原生開發後，要重新轉回 Flutter？
-
-
-- 我們嘗試了原生開發（SwiftUI、KMP、React Native）一年。
-- 關於 Flutter，你需要自己設計，不能依賴原生設計，因為看起來不夠好。
-
----
-
 # Flutter & Dart: 2025 年度精彩回顧
 ### 打造最強大的多平台開發生態系
 
@@ -130,6 +121,14 @@ paginate: true
     2.  利用 **GenUI** 打造即時草圖板。
     3.  建立 **Agentic Workflow**：讓 AI 自動分析截圖並透過 Hot Reload 修復。
     4.  嘗試 **Dart 3.10 Dot Shorthands** 重構程式碼。
+
+---
+
+# 為什麼我的公司在一年原生開發後，要重新轉回 Flutter？
+
+
+- 我們嘗試了原生開發（SwiftUI、KMP、React Native）一年。
+- 關於 Flutter，你需要自己設計，不能依賴原生設計，因為看起來不夠好。
 
 ---
 
