@@ -66,12 +66,6 @@ paginate: true
 
 ---
 
----
-marp: true
-theme: default
-paginate: true
----
-
 # Dart 3.11 正式發布
 > 本次更新專注於提升開發流程的響應速度與工具效能。
 
@@ -166,13 +160,6 @@ paginate: true
 
 ---
 
-
-# Toyota 正在開發主機級開源遊戲引擎
-
-- 使用 Flutter & Dart
-- 日期: 2026-02-06
-- 來源: Reddit
-
 ---
 
 # 官方 Material 套件發布！
@@ -181,14 +168,6 @@ paginate: true
 - `cupertino_ui` 也可使用！
 - Flutter 分離正式開始！
 - 連結: https://pub.dev/packages/material_ui
-
----
-
-# Flutter 3.41 的新功能
-
-- 日期: 2026-02-11
-- 內容: 無
-- 來源: Reddit
 
 ---
 
@@ -230,14 +209,6 @@ paginate: true
 - 專案已發布至 pub.dev: https://pub.dev/packages/cached_network_image_ce
 
 ---
-
-# Flutter 2026 的現狀
-
-- 日期: 2026-02-05
-- 內容: 無
-- 來源: Reddit
-
------Open-source Flutter/Dart network inspector app: HTTP + WebSocket/Socket.io (DevTools alternative)
 
 # 開源 Flutter/Dart 網路監測工具
 
@@ -326,6 +297,13 @@ paginate: true
   - 在 FOSDEM 2026 發布，計畫開源。
 
 ---
+
+
+# Toyota 正在開發主機級開源遊戲引擎 - Fluorite
+
+https://www.facebook.com/groups/flutter.taipei/posts/4383251535275103/
+
+https://fluorite.game/
 
 # Fluorite 的細節與影響
 
