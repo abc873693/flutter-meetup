@@ -1,0 +1,68 @@
+name: Build slides
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "*/slide.md"
+      - ".github/workflows/build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find changed slide.md files
+        id: find
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            mapfile -t files < <(find . -mindepth 2 -maxdepth 2 -name slide.md -type f | sort)
+          else
+            mapfile -t files < <(git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
+              | grep -E '^[0-9]+/slide\.md$' || true)
+          fi
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No slide.md changes."
+            echo "files=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          printf '%s\n' "${files[@]}"
+          {
+            echo "files<<EOF"
+            printf '%s\n' "${files[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build with Marp
+        if: steps.find.outputs.files != ''
+        env:
+          FILES: ${{ steps.find.outputs.files }}
+        run: |
+          set -euo pipefail
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            echo "Building $f"
+            docker run --rm -v "$PWD:/home/marp/app" -e LANG="$LANG" \
+              marpteam/marp-cli:latest \
+              "$f" --html --allow-local-files
+          done <<< "$FILES"
+
+      - name: Commit built index.html
+        if: steps.find.outputs.files != ''
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add '*/index.html'
+          if git diff --cached --quiet; then
+            echo "No index.html changes."
+            exit 0
+          fi
+          git commit -m "chore: rebuild slides [skip ci]"
+          git push
