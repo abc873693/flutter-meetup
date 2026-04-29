@@ -1,2 +1,9 @@
 
 .DS_Store
+
+# Marp build output — published to gh-pages by .github/workflows/build.yml
+[0-9]*/index.html
+public/
+
+# Local env
+scripts/.env
