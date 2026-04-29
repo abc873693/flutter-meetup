@@ -1,15 +1,20 @@
-name: Build slides
+name: Build & deploy slides
 
 on:
   push:
     branches: [main]
     paths:
       - "*/slide.md"
+      - "images/**"
       - ".github/workflows/build.yml"
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -17,52 +22,53 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Find changed slide.md files
-        id: find
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Marp CLI
+        run: npm i -g @marp-team/marp-cli@4
+
+      - name: Build all slide.md with Marp
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            mapfile -t files < <(find . -mindepth 2 -maxdepth 2 -name slide.md -type f | sort)
-          else
-            mapfile -t files < <(git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
-              | grep -E '^[0-9]+/slide\.md$' || true)
+          mkdir -p public
+          # mirror shared images
+          if [ -d images ]; then
+            cp -R images public/images
           fi
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "No slide.md changes."
-            echo "files=" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          printf '%s\n' "${files[@]}"
+          # build each meetup folder
+          for slide in [0-9]*/slide.md; do
+            [ -f "$slide" ] || continue
+            dir="$(dirname "$slide")"
+            mkdir -p "public/$dir"
+            # per-meetup local images
+            if [ -d "$dir/images" ]; then
+              cp -R "$dir/images" "public/$dir/images"
+            fi
+            echo "Building $slide"
+            marp "$slide" --html --allow-local-files \
+              -o "public/$dir/index.html"
+          done
+
+      - name: Generate landing index
+        run: |
+          set -euo pipefail
           {
-            echo "files<<EOF"
-            printf '%s\n' "${files[@]}"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+            echo '<!doctype html><meta charset="utf-8"><title>Flutter Taipei 小聚</title>'
+            echo '<style>body{font-family:system-ui;max-width:640px;margin:3rem auto;padding:0 1rem}li{margin:.4rem 0}</style>'
+            echo '<h1>Flutter Taipei 小聚</h1><ul>'
+            for dir in $(ls -1 public | grep -E '^[0-9]+$' | sort -rn); do
+              echo "<li><a href=\"./$dir/\">小聚 #$dir</a></li>"
+            done
+            echo '</ul>'
+          } > public/index.html
 
-      - name: Build with Marp
-        if: steps.find.outputs.files != ''
-        env:
-          FILES: ${{ steps.find.outputs.files }}
-        run: |
-          set -euo pipefail
-          while IFS= read -r f; do
-            [ -z "$f" ] && continue
-            echo "Building $f"
-            docker run --rm -v "$PWD:/home/marp/app" -e LANG="$LANG" \
-              marpteam/marp-cli:latest \
-              "$f" --html --allow-local-files
-          done <<< "$FILES"
-
-      - name: Commit built index.html
-        if: steps.find.outputs.files != ''
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add '*/index.html'
-          if git diff --cached --quiet; then
-            echo "No index.html changes."
-            exit 0
-          fi
-          git commit -m "chore: rebuild slides [skip ci]"
-          git push
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./public
+          force_orphan: true
+          commit_message: "deploy: ${{ github.sha }}"
