@@ -11,3 +11,7 @@ scripts/.env
 # Python
 __pycache__/
 *.pyc
+
+# open-slide
+open-slide/node_modules/
+open-slide/dist/
