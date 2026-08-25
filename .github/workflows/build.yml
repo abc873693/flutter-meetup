@@ -61,9 +61,19 @@ jobs:
           cd ..
           mkdir -p public/os
           cp -R open-slide/dist/. public/os/
-          # open-slide 是 browser-history SPA：直接開 /os/s/37 或重整時，
-          # GitHub Pages 找不到實體檔案，要靠 404.html 把路由交還給 SPA。
+          # open-slide 是 browser-history SPA。GitHub Pages 不會對子目錄請求套用
+          # 子目錄的 404.html（實測 /os/s/37 直接回 404），所以替每個 deck 的路由
+          # 放一份實體 index.html —— SPA 載入後 React Router 會讀當前 URL 顯示對應 deck。
+          # 資產走絕對路徑（/flutter-meetup/os/assets/...），放在任何深度都能載入。
           cp public/os/index.html public/os/404.html
+          for d in open-slide/slides/*/; do
+            id="$(basename "$d")"
+            [ -f "$d/index.tsx" ] || continue
+            mkdir -p "public/os/s/$id/presenter"
+            cp public/os/index.html "public/os/s/$id/index.html"
+            cp public/os/index.html "public/os/s/$id/presenter/index.html"
+            echo "routed /os/s/$id"
+          done
 
       - name: Generate landing index
         run: |
