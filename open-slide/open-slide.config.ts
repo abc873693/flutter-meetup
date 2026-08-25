@@ -4,6 +4,8 @@ import type { OpenSlideConfig } from '@open-slide/core';
 // base 會同時傳給 Vite 的 base 與 React Router 的 basename。
 const config: OpenSlideConfig = {
   base: '/flutter-meetup/os/',
+  // 直接用 repo 既有的圖，不再複製一份；deck 內以 @assets/... import
+  assetsDir: '../images',
 };
 
 export default config;
