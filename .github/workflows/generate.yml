@@ -1,0 +1,71 @@
+name: Generate monthly slide
+
+on:
+  workflow_dispatch:
+    inputs:
+      num:
+        description: "Meetup number (leave empty to auto-detect latest+1)"
+        required: false
+      month:
+        description: "Target month YYYY-MM (leave empty for current month)"
+        required: false
+  schedule:
+    # 25th of every month at 02:00 UTC (10:00 Taipei) — week before the last-Tuesday meetup.
+    - cron: "0 2 25 * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+
+      - run: pip install -r scripts/requirements.txt
+
+      - name: Run generator
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set -euo pipefail
+          args=()
+          if [ -n "${{ inputs.num }}" ]; then args+=(--num "${{ inputs.num }}"); fi
+          if [ -n "${{ inputs.month }}" ]; then args+=(--month "${{ inputs.month }}"); fi
+          python scripts/generate_slide.py "${args[@]}"
+
+      - name: Open PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: auto/monthly-slide
+          delete-branch: true
+          commit-message: "feat: generate monthly slide"
+          title: "feat: generate monthly slide"
+          body: |
+            由 `.github/workflows/generate.yml` 自動產生。
+
+            ## 變更內容
+            - `<num>/topics.json`：結構化草稿，**review 看這個檔案就好**
+            - `<num>/slide.md`：由 topics.json 渲染出的 Marp 簡報
+
+            ## 來源
+            - RSS：blog.flutter.dev、r/FlutterDev
+            - 摘要：Claude API（每則主題以 tool use 產出固定結構）
+
+            ## 審閱方式
+            1. 看 `topics.json`，刪掉不相關的主題、修 bullets 措辭
+            2. 改完跑 `python scripts/generate_slide.py --render-only --num <num> --force`
+               重新渲染 slide.md（此步驟不需要 API key）
+            3. `slide.md` 裡的 `TODO` 要補：講者、Slido 連結與 QR、近期社群活動
+
+            merge 後會觸發 `build.yml` 重新部署 gh-pages。
+          add-paths: |
+            */slide.md
+            */topics.json
