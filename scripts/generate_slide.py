@@ -36,8 +36,11 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")
 
 # Feeds curated for Flutter Taipei monthly digest. Add/remove as needed.
+# 2026/07 起 Flutter 與 Dart 官方 blog 都搬離 Medium：blog.flutter.dev/feed 現在
+# 301 到一個 404，medium.com/feed/dartlang 只剩搬家公告。用新家的 Atom feed。
 FEEDS = [
-    "https://blog.flutter.dev/feed",
+    "https://flutter.dev/blog/feed.xml",
+    "https://dart.dev/blog/feed.xml",
     "https://www.reddit.com/r/FlutterDev/.rss",
 ]
 
