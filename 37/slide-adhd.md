@@ -184,9 +184,7 @@ https://gdg.tw/code_of_conduct/
 
 ---
 
-# [Slido](https://app.sli.do/event/TODO)
-
-<!-- TODO: 換成 #37 的 Slido event 連結，並更新 37/images/slido.png QR -->
+# [Slido](https://qr.sli.do/7Wjw8b8UMxcGaUFAqKYsmY)
 
 ![bg width:72% right](./images/slido.png)
 
@@ -196,7 +194,7 @@ https://gdg.tw/code_of_conduct/
 
 # Flutter 八月大小事
 
-## TODO: 講者
+## Rainer Fang
 
 ---
 

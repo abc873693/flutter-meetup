@@ -151,9 +151,7 @@ section.divider h2 { color: #ffffff; opacity: 0.92; }
 
 ---
 
-# [Slido](https://app.sli.do/event/TODO)
-
-<!-- TODO: 換成 #37 的 Slido event 連結，並更新 37/images/slido.png QR -->
+# [Slido](https://qr.sli.do/7Wjw8b8UMxcGaUFAqKYsmY)
 
 ![bg width:75% right](./images/slido.png)
 
