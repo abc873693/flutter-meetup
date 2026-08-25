@@ -118,7 +118,7 @@ section.divider h2 { color: #ffffff; opacity: 0.92; }
 
 ---
 
-![bg width:75%](../images/gdg-taipei.jpeg)
+![bg width:90%](../images/gdg-taipei.svg)
 
 ![bg width:80%](../images/gdg-taipei-qr.png)
 
@@ -167,19 +167,18 @@ section.divider h2 { color: #ffffff; opacity: 0.92; }
 ## Rainer Fang
 
 ---
+# Flutter 3.47 ＋ Dart 3.13
 
-# Flutter 3.47 登場
-
-> 2026/08/12 發布，本季 stable。
+> 兩者都在 2026/08/12 發布。
 
 - **設計系統獨立**：`material_ui`、`cupertino_ui` 釋出 1.0
 - **Impeller 成為桌面預設** renderer（macOS / Windows / Linux）
 - **Widget Previews 進入 stable**
 - Apple 平台最低版本拉高：**iOS 15**、**macOS 12**
-- Wasm、多視窗、桌面 flavors 持續推進
+- Dart 3.13：**primary constructors 進入 stable**
+- 官方推 **Wasm**：8/17–8/21 辦了 WebAssembly Week
 
-- 來源：[What's new in Flutter 3.47](https://flutter.dev/blog/whats-new-in-flutter-3-47)｜[Release notes](https://docs.flutter.dev/release/release-notes/release-notes-3.47.0)
-
+- 來源：[Flutter 3.47](https://flutter.dev/blog/whats-new-in-flutter-3-47)｜[Dart 3.13](https://dart.dev/blog/announcing-dart-3-13)
 ---
 
 # material_ui / cupertino_ui 1.0
@@ -251,33 +250,70 @@ dart fix --apply --code=migrate_design_widgets
 > 這個功能適合拿來做 design system / 元件庫的日常開發。
 
 ---
+# Dart 3.13：primary constructors
 
-# Web：Wasm 進度
+- **primary constructors 進入 stable**（3.12 還是實驗性）
 
-opt-in 建置：
-
-```bash
-flutter build web --release --wasm
+```dart
+class Point(final int x, final int y);
 ```
 
-- 前提：專案要改用 `package:web`，不能再用 `dart:html`
-- 實驗性的 **deferred loading**，把 app 切成可延遲載入的小模組
+- 一行取代「欄位宣告 + 建構式參數」的樣板碼
+- 建構式可用 `new` / `factory`，空 body 直接用 `;` 收尾
+- 附 **6 個新 lint** 與 **4 個 IDE refactoring** 協助遷移
+  - 如 `use_declaring_parameters`、`unnecessary_primary_constructor_body`
 
-```bash
-flutter build web --release --wasm --enable-wasm-deferred-loading
-```
-
-- 新增 Wasm 編譯錯誤的排查指引，以及 web build 的 `--source-maps` 說明
-
+- 來源：[Announcing Dart 3.13](https://dart.dev/blog/announcing-dart-3-13)｜[設計取捨](https://dart.dev/blog/bringing-primary-constructors-to-dart)
 ---
+# Dart 3.13：其他重點
 
-# Desktop：多視窗與 flavors
+- **native library tree-shaking**
+  - `@RecordUse()` + `package:record_use`，只保留真正被呼叫的 native symbol
+  - binary 明顯縮小，完全沒用到的 native library 可整包省略
+- **Wasm deferred loading**（preview）
+  - `dart compile wasm -O2 --enable-deferred-loading`
+- **formatter 行為變更**（僅語言版本 3.13+ 生效）
+  - import 區塊之間自動插入空行
+  - method chain 的換行啟發式調整
+- 舊 web library（`dart:html`、`package:js`）不支援 dart2wasm
+  - 改用 `package:web`、`dart:js_interop`
+---
+# Wasm Week：實測數據
 
-- **多視窗 API（實驗性）**
-  - Linux / Windows 支援 popup window，可做 context menu
-  - 可從 platform controller 取 `windowHandle` 拿原生指標（HWND / NSWindow / GtkWindow）
-  - 新的 sized-to-content API，視窗自動貼合內容
-- **Windows / Linux 支援 flavors**
+> 8/17–8/21，官方推動大家把 web app 編成 WebAssembly。
+
+- 相對 JS 編譯（Chrome 151 / M4 Pro / 200 animated nodes）
+  - frame time **快 2 倍**（17.4ms vs 34.5ms），穩定 60 FPS
+  - widget building **快 2.5 倍**，抖動小 **3 倍以上**
+  - bundle 只大 **5% 以內**
+- **58% 的現有 web app 零改動**就能編成 Wasm
+- `dart:html` / `dart:js` → `package:web` / `dart:js_interop`
+- server 要設 `COEP: credentialless`、`COOP: same-origin`
+
+- 來源：[Wasm Week](https://flutter.dev/blog/try-flutter-web-with-webassembly-week)
+---
+# Desktop Windowing API
+
+> 在 **main channel**，需 `flutter config --enable-windowing`，仍是 experimental。
+
+- 五種 window 類型：regular / dialog / tooltip / popup / satellite
+  - 可階層嵌套，跨平台行為一致
+- 主要 API：`WindowController`、`DialogWindowController`、`Window`、`WindowScope`
+
+```dart
+final controller = WindowController(
+  title: 'My Application',
+  size: const Size(800, 600),
+);
+```
+
+- `showDialog` / `showMenu` / `Tooltip` 的整合還在規劃中
+
+- 來源：[Desktop Windowing APIs](https://flutter.dev/blog/desktop-windowing-apis)
+---
+# Desktop：flavors 與文字渲染
+
+- **Windows / Linux 開始支援 flavors**
 
 ```yaml
 flutter:
@@ -288,7 +324,19 @@ flutter:
 ```
 
 - 文字渲染改用 **SDF**（macOS / Linux / Windows），字更利、曲線更乾淨
+- 可從 platform controller 取 `windowHandle` 拿原生指標（HWND / NSWindow / GtkWindow）
+---
+# AI 與 Agent 相關
 
+- **多 agent 開發團隊**（8/20）
+  - 在 Antigravity 裡跑 architect / tester / coder 分工
+  - 以 TDD 方式把 Python library 移植成 idiomatic 的 Dart package
+- **async A2UI**（8/13）
+  - 預先產生並快取 A2UI message，消除 generative UI 的啟動延遲
+- Flutter 3.47 內的 `genui` **0.10.0**
+  - 新增 `a2ui_core`，支援 client-side function
+
+- 來源：[multi-agent dev teams](https://flutter.dev/blog/building-multi-agent-dev-teams)｜[async A2UI](https://flutter.dev/blog/speeding-up-generative-ui-with-async-a2ui)
 ---
 
 # Android 依賴矩陣
@@ -322,18 +370,16 @@ Flutter 3.47 驗證過的組合：
   - `ImageStreamListener` 可直接接收 image stream 錯誤
 
 ---
-
 # 這個月該做的事
 
-1. `flutter upgrade` 升到 **3.47**
+1. `flutter upgrade` 升到 **3.47**（含 Dart **3.13**）
 2. 跑 `dart fix --apply --code=migrate_design_widgets`，**先試 material_ui 遷移**
 3. 檢查 Apple 專案：iOS 15 / macOS 12 最低版本、**UIScene**、自訂 AppDelegate
-4. 桌面 app 實測 Impeller，確認沒有渲染回歸
-5. 盤點相依 plugin 的 **SwiftPM** 遷移狀況
-6. 看一遍 [Breaking changes](https://docs.flutter.dev/release/breaking-changes)
+4. web 專案試跑 `flutter build web --wasm`，順手把 `dart:html` 換掉
+5. 桌面 app 實測 Impeller，確認沒有渲染回歸
+6. 盤點相依 plugin 的 **SwiftPM** 遷移狀況
 
 > 11 月 stable 會正式 deprecate 舊 design library，**現在動比較不痛**。
-
 ---
 
 # Q & A
