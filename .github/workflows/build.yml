@@ -52,6 +52,32 @@ jobs:
               -o "public/$dir/index.html"
           done
 
+      - name: Build ADHD-friendly variants
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          variants=([0-9]*/slide-adhd.md)
+          if [ ${#variants[@]} -eq 0 ]; then
+            echo "no slide-adhd.md found, skipping"
+            exit 0
+          fi
+          mkdir -p public/simple
+          # 這些 deck 的圖片引用是 ../images/（repo 根）與 ./images/（期數目錄）。
+          # 放在 public/simple/<num>/ 這個深度時兩者都能對上，前提是 simple/ 下鏡一份 images。
+          if [ -d images ]; then
+            cp -R images public/simple/images
+          fi
+          for slide in "${variants[@]}"; do
+            dir="$(dirname "$slide")"
+            mkdir -p "public/simple/$dir"
+            if [ -d "$dir/images" ]; then
+              cp -R "$dir/images" "public/simple/$dir/images"
+            fi
+            echo "Building $slide"
+            marp "$slide" --html --allow-local-files \
+              -o "public/simple/$dir/index.html"
+          done
+
       - name: Build open-slide deck
         run: |
           set -euo pipefail
@@ -86,7 +112,12 @@ jobs:
               echo "<li><a href=\"./$dir/\">小聚 #$dir</a></li>"
             done
             echo '</ul>'
-            echo '<hr><p><a href="./os/">open-slide 版（React）</a></p>'
+            echo '<hr><ul>'
+            for dir in $(ls -1 public/simple 2>/dev/null | grep -E '^[0-9]+$' | sort -rn); do
+              echo "<li><a href=\"./simple/$dir/\">小聚 #$dir ・ADHD 友善版</a></li>"
+            done
+            echo '<li><a href="./os/">open-slide 版（React）</a></li>'
+            echo '</ul>'
           } > public/index.html
 
       - name: Deploy to gh-pages
