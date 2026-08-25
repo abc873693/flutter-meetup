@@ -33,7 +33,7 @@ jobs:
 
       - name: Run generator
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           set -euo pipefail
           args=()
@@ -57,7 +57,7 @@ jobs:
 
             ## 來源
             - RSS：blog.flutter.dev、r/FlutterDev
-            - 摘要：Claude API（每則主題以 tool use 產出固定結構）
+            - 摘要：Gemini API（每則主題以 response_schema 產出固定結構）
 
             ## 審閱方式
             1. 看 `topics.json`，刪掉不相關的主題、修 bullets 措辭

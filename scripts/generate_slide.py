@@ -17,13 +17,14 @@ Usage:
     python scripts/generate_slide.py --force         # 覆寫已存在的 slide.md
 
 Env:
-    ANTHROPIC_API_KEY     required（--render-only 不需要）
-    ANTHROPIC_MODEL       optional, 預設 claude-sonnet-5
+    GEMINI_API_KEY        required（--render-only 不需要）
+    GEMINI_MODEL          optional, 預設 gemini-3.5-flash
 """
 
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import os
 import re
@@ -33,7 +34,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")
+DEFAULT_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
 
 # Feeds curated for Flutter Taipei monthly digest. Add/remove as needed.
 # 2026/07 起 Flutter 與 Dart 官方 blog 都搬離 Medium：blog.flutter.dev/feed 現在
@@ -51,41 +52,34 @@ MONTH_ZH = {
 
 MAX_BULLETS_PER_PAGE = 6
 
-# Claude 必須用這個 tool 回覆，才能拿到可驗證的結構化草稿而非自由格式 markdown。
-TOPIC_TOOL = {
-    "name": "emit_topic",
-    "description": "輸出一則整理好的 Flutter 月報主題。",
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "title": {
-                "type": "string",
-                "description": "投影片標題，簡潔有力，10 字以內為佳。",
-            },
-            "tagline": {
-                "type": "string",
-                "description": "一句話說明這則消息的重點，可留空字串。",
-            },
-            "bullets": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": (
-                    "3 到 6 個重點，每點一行，繁體中文。"
-                    "重要關鍵字用 **粗體**，程式碼/API/指令用 `backtick`。"
-                ),
-            },
-            "source_label": {
-                "type": "string",
-                "description": "來源平台名稱：官方 Medium / Reddit / 文章。",
-            },
-        },
-        "required": ["title", "bullets", "source_label"],
-    },
-}
+# Gemini 以 response_schema 回覆，拿到的就是可驗證的結構化草稿而非自由格式 markdown。
+# 這個 model 在 summarize_entry() 裡才會被實際建立，讓 --render-only 不必安裝 SDK。
+# 快取住：每篇文章重建一次是浪費，而且 isinstance 檢查需要同一個 class。
+@functools.lru_cache(maxsize=1)
+def _topic_model():
+    from pydantic import BaseModel, Field
+
+    class TopicOut(BaseModel):
+        title: str = Field(description="投影片標題，簡潔有力，10 字以內為佳。")
+        tagline: str = Field(
+            default="", description="一句話說明這則消息的重點，可留空字串。"
+        )
+        bullets: list[str] = Field(
+            description=(
+                "3 到 6 個重點，每點一行，繁體中文。"
+                "重要關鍵字用 **粗體**，程式碼/API/指令用 `backtick`。"
+            )
+        )
+        source_label: str = Field(
+            description="來源平台名稱：官方 Medium / Reddit / 文章。"
+        )
+
+    return TopicOut
+
 
 SUMMARIZE_PROMPT = """你正在為 Flutter Taipei 月會整理當月 Flutter 大小事。
 
-請閱讀以下文章，用 `emit_topic` tool 輸出一則主題。
+請閱讀以下文章，輸出一則主題（依指定的 JSON schema）。
 
 規則：
 1. 全部用繁體中文（台灣用語），技術名詞、API、套件名保留英文原文。
@@ -355,33 +349,40 @@ def fetch_article_body(url: str) -> str:
 
 def summarize_entry(client, entry: Entry) -> dict:
     """Return a structured topic dict. Falls back to a TODO stub on failure."""
+    from google.genai import types
+
     content = fetch_article_body(entry.url) or entry.summary
     if not content:
         return _todo_topic(entry)
 
-    msg = client.messages.create(
-        model=DEFAULT_MODEL,
-        max_tokens=1500,
-        tools=[TOPIC_TOOL],
-        tool_choice={"type": "tool", "name": "emit_topic"},
-        messages=[{
-            "role": "user",
-            "content": SUMMARIZE_PROMPT.format(
+    TopicOut = _topic_model()
+    try:
+        resp = client.models.generate_content(
+            model=DEFAULT_MODEL,
+            contents=SUMMARIZE_PROMPT.format(
                 title=entry.title,
                 url=entry.url,
                 content=content,
             ),
-        }],
-    )
-    for block in msg.content:
-        if getattr(block, "type", None) == "tool_use":
-            topic = dict(block.input)
-            topic["source_url"] = entry.url
-            topic.setdefault("tagline", "")
-            topic.setdefault("source_label", "文章")
-            if topic.get("bullets"):
-                return topic
-    return _todo_topic(entry)
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=TopicOut,
+            ),
+        )
+        # SDK 會在 response_schema 是 Pydantic model 時填 .parsed，
+        # 但不同版本行為不一，所以留一條從 .text 解析的退路。
+        parsed = getattr(resp, "parsed", None)
+        if not isinstance(parsed, TopicOut):
+            parsed = TopicOut.model_validate_json(resp.text)
+    except Exception as exc:  # noqa: BLE001
+        print(f"  ! summarize failed for {entry.url}: {exc}", file=sys.stderr)
+        return _todo_topic(entry)
+
+    topic = parsed.model_dump()
+    topic["source_url"] = entry.url
+    if not topic.get("bullets"):
+        return _todo_topic(entry)
+    return topic
 
 
 def _todo_topic(entry: Entry) -> dict:
@@ -484,8 +485,8 @@ def main() -> int:
         draft = json.loads(topics_file.read_text(encoding="utf-8"))
         print(f"Rendering #{draft['num']} from {topics_file.name}", file=sys.stderr)
     else:
-        if not os.environ.get("ANTHROPIC_API_KEY"):
-            print("ERROR: ANTHROPIC_API_KEY env var required", file=sys.stderr)
+        if not (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")):
+            print("ERROR: GEMINI_API_KEY env var required", file=sys.stderr)
             return 1
 
         print(f"Generating #{num} ({year}-{month:02d})", file=sys.stderr)
@@ -495,9 +496,10 @@ def main() -> int:
             print("No entries found for the target month. Aborting.", file=sys.stderr)
             return 2
 
-        from anthropic import Anthropic
+        from google import genai
 
-        client = Anthropic()
+        # GEMINI_API_KEY / GOOGLE_API_KEY 會被 client 自動取用
+        client = genai.Client()
         topics: list[dict] = []
         for i, e in enumerate(entries, 1):
             print(f"  [{i}/{len(entries)}] {e.title[:60]}", file=sys.stderr)
