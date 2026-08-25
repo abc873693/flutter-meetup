@@ -69,7 +69,7 @@ section blockquote {
   font-style: normal;
 }
 
-/* 封面：疊在 cover.png 上，不要四色底線 */
+/* 封面：疊在 cover-v2.png 上，不要四色底線 */
 section.cover h1 {
   background-image: none;
   padding-bottom: 0;
@@ -100,7 +100,7 @@ section.divider h2 { color: #ffffff; opacity: 0.92; }
 
 ### 2026 / 08 ・ GDG Taipei × Flutter Taipei
 
-![bg](../images/cover.png)
+![bg](../images/cover-v2.png)
 
 ---
 
@@ -144,8 +144,7 @@ section.divider h2 { color: #ffffff; opacity: 0.92; }
 
 # 近期社群活動
 
-- TODO: 補上 9 月 GDG Taipei / GDG Cloud Taipei 活動
-  - 活動名稱、日期時間、地點、報名連結
+- **無**（目前沒有已公告的近期活動）
 - 近期已辦
   - **COSCUP 2026 - Google 開發者派對**（8/8–8/9，台灣科技大學）
     - GDG 專屬議程軌與攤位，主題涵蓋 Gemini / Gemma、Android、Google Cloud
@@ -206,7 +205,7 @@ dart fix --apply --code=migrate_design_widgets
 - core SDK 內的舊 design library 將在 **11 月 stable 正式 deprecate**
 - 對生態系套件而言，這等同一次 **major version bump**
 - 相依套件還沒跟上時，可用 `MaterialUiCompatibilityBridge` 先遷移自己的 app
-- `flutter_localizations` 一併解綁
+- `flutter_localizations` 一併拆分出來
   - 改用 `GlobalMaterialLocalizations.delegates`，不用再手動列一堆 delegate
 
 > 建議：**這個月就開始試 `dart fix`**，不要等 11 月。
@@ -258,7 +257,7 @@ dart fix --apply --code=migrate_design_widgets
 class Point(final int x, final int y);
 ```
 
-- 一行取代「欄位宣告 + 建構式參數」的樣板碼
+- 一行取代「欄位宣告 + 建構式參數」的樣板程式碼
 - 建構式可用 `new` / `factory`，空 body 直接用 `;` 收尾
 - 附 **6 個新 lint** 與 **4 個 IDE refactoring** 協助遷移
   - 如 `use_declaring_parameters`、`unnecessary_primary_constructor_body`
@@ -297,7 +296,7 @@ class Point(final int x, final int y);
 > 在 **main channel**，需 `flutter config --enable-windowing`，仍是 experimental。
 
 - 五種 window 類型：regular / dialog / tooltip / popup / satellite
-  - 可階層嵌套，跨平台行為一致
+  - 可階層巢狀，跨平台行為一致
 - 主要 API：`WindowController`、`DialogWindowController`、`Window`、`WindowScope`
 
 ```dart
